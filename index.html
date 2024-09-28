@@ -115,6 +115,10 @@
             border-radius: 3px;
             transition: width 500ms ease-in-out;
         }
+
+        #combine-slides {
+            margin-top: 10px;
+        }
     </style>
 </head>
 
@@ -128,6 +132,10 @@
         </form>
     </div>
     <div id="file-list"></div>
+    <div id="combine-slides">
+        <input type="checkbox" id="combine-checkbox">
+        <label for="combine-checkbox">Combine slides with the same title into one card</label>
+    </div>
     <button id="generate-button" disabled>Generate Anki Decks</button>
     <div id="progress-area"></div>
 
@@ -154,6 +162,7 @@ const fileInput = document.getElementById('file-input');
 const generateButton = document.getElementById('generate-button');
 const fileList = document.getElementById('file-list');
 const progressArea = document.getElementById('progress-area');
+const combineCheckbox = document.getElementById('combine-checkbox');
 
 // Event listeners for drag and drop
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -338,14 +347,19 @@ function updateProgress(message, percentage) {
                 const imageName = `${titleText}_${i}_${pageNum}.jpg`;
                 mediaFiles.push({ name: imageName, data: imageData });
 
-                // Check if a note with this title already exists
-                if (notes.has(header)) {
-                    // Append the image to the existing note
-                    const existingNote = notes.get(header);
-                    existingNote[2] += `<img src="${imageName}">`;
+                if (combineCheckbox.checked) {
+                    // Combine slides with the same title
+                    if (notes.has(header)) {
+                        // Append the image to the existing note
+                        const existingNote = notes.get(header);
+                        existingNote[2] += `<img src="${imageName}">`;
+                    } else {
+                        // Create a new note
+                        notes.set(header, [header, '', `<img src="${imageName}">`]);
+                    }
                 } else {
-                    // Create a new note
-                    notes.set(header, [header, '', `<img src="${imageName}">`]);
+                    // Create a separate note for each slide
+                    notes.set(`${header}_${pageNum}`, [header, '', `<img src="${imageName}">`]);
                 }
 
                 updateProgress(`Processing PDF ${i + 1} of ${pdfs.length}, page ${pageNum} of ${pdfDoc.numPages}`, (i / pdfs.length + pageNum / pdfDoc.numPages / pdfs.length) * 100);
